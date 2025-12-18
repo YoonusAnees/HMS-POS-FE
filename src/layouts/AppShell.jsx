@@ -1,6 +1,7 @@
 import React from 'react';
-import Sidebar from '../components/layout/Sidebar';
-import Topbar from '../components/layout/Topbar';
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+
 
 export default function AppShell({ nav, children }) {
   return (

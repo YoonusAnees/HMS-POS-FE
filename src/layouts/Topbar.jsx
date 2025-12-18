@@ -1,6 +1,6 @@
 import React from 'react';
-import Button from '../ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
+import Button from '../components/ui/Button';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Topbar() {
