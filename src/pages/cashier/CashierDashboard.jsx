@@ -7,33 +7,19 @@ import { OrdersService } from '../../services/orders.service';
 import { RefundsService } from '../../services/refunds.service';
 import { ReportsService } from '../../services/reports.service';
 
-
-
-const toNum = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
+const toNum = (v) => Number.isFinite(Number(v)) ? Number(v) : 0;
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-// YYYY-MM-DD local
-const todayLocal = () => {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-};
+const todayLocal = () => new Date().toISOString().slice(0, 10);
 
 export default function CashierDashboard() {
-  // ✅ Receipt (Closed Orders)
+  // Receipt
   const [receiptOrderId, setReceiptOrderId] = useState('');
   const [receiptOrder, setReceiptOrder] = useState(null);
   const [receiptErr, setReceiptErr] = useState('');
   const [receiptLoading, setReceiptLoading] = useState(false);
 
-  
-
-  // ✅ Refund
+  // Refund
   const [refundOrderId, setRefundOrderId] = useState('');
   const [refundMethod, setRefundMethod] = useState('cash');
   const [refundAmount, setRefundAmount] = useState('');
@@ -41,7 +27,7 @@ export default function CashierDashboard() {
   const [refundOk, setRefundOk] = useState('');
   const [refundLoading, setRefundLoading] = useState(false);
 
-  // ✅ End of Day report
+  // EOD Report
   const [eodDate, setEodDate] = useState(todayLocal());
   const [eodCurrency, setEodCurrency] = useState('LKR');
   const [eod, setEod] = useState(null);
@@ -54,15 +40,11 @@ export default function CashierDashboard() {
     setReceiptLoading(true);
     try {
       const id = Number(receiptOrderId);
-      if (!id) throw new Error('Enter valid Order ID');
-
+      if (!id) throw new Error('Enter a valid Order ID');
       const order = await OrdersService.getById(id);
-
-      // ✅ allow viewing any order, but highlight closed receipt
       setReceiptOrder(order);
-
       if (order.status !== 'closed') {
-        setReceiptErr('This order is not CLOSED. Receipt is usually for closed orders.');
+        setReceiptErr('Warning: Order is not closed. Receipt is typically for closed orders.');
       }
     } catch (e) {
       setReceiptErr(e?.message || 'Failed to load order');
@@ -73,22 +55,13 @@ export default function CashierDashboard() {
 
   const receiptSummary = useMemo(() => {
     if (!receiptOrder) return null;
-
     const total = toNum(receiptOrder.grandTotal);
     const pays = receiptOrder.payments || [];
-
     const gross = pays.filter(p => toNum(p.amount) > 0).reduce((s, p) => s + toNum(p.amount), 0);
     const refunds = pays.filter(p => toNum(p.amount) < 0).reduce((s, p) => s + Math.abs(toNum(p.amount)), 0);
     const netPaid = gross - refunds;
     const balance = round2(total - netPaid);
-
-    return {
-      total,
-      gross,
-      refunds,
-      netPaid: round2(netPaid),
-      balance,
-    };
+    return { total, gross, refunds, netPaid: round2(netPaid), balance };
   }, [receiptOrder]);
 
   const doRefund = async () => {
@@ -98,21 +71,16 @@ export default function CashierDashboard() {
     try {
       const orderId = Number(refundOrderId);
       const amount = toNum(refundAmount);
-
-      if (!orderId) throw new Error('Order ID is required');
-      if (amount <= 0) throw new Error('Refund amount must be > 0');
-
+      if (!orderId) throw new Error('Order ID required');
+      if (amount <= 0) throw new Error('Refund amount must be positive');
       const res = await RefundsService.create({
         orderId,
         method: refundMethod,
         amount: amount.toFixed(2),
         currency: 'LKR',
       });
-
-      setRefundOk(`Refund created. Order status: ${res.summary?.orderStatus || 'ok'}`);
+      setRefundOk(`Refund successful! Order status: ${res.summary?.orderStatus || 'updated'}`);
       setRefundAmount('');
-
-      // refresh receipt if same order
       if (receiptOrder?.id === orderId) {
         const refreshed = await OrdersService.getById(orderId);
         setReceiptOrder(refreshed);
@@ -139,165 +107,131 @@ export default function CashierDashboard() {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {/* ✅ Receipt */}
-      <Card title="Receipt View (Closed Orders)">
-        <div className="grid gap-3">
-          <Input
-            label="Order ID"
-            value={receiptOrderId}
-            onChange={(e) => setReceiptOrderId(e.target.value)}
-            placeholder="e.g. 12"
-          />
-          <Button onClick={loadReceipt} disabled={receiptLoading}>
-            {receiptLoading ? 'Loading...' : 'View Receipt'}
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Receipt Viewer */}
+      <Card title="Receipt Preview">
+        <div className="space-y-4">
+          <Input label="Order ID" value={receiptOrderId} onChange={e => setReceiptOrderId(e.target.value)} placeholder="e.g. 15" />
+          <Button className="w-full" onClick={loadReceipt} disabled={receiptLoading}>
+            {receiptLoading ? 'Loading...' : 'Load Receipt'}
           </Button>
 
-          {receiptErr && <div className="text-sm text-red-600">{receiptErr}</div>}
+          {receiptErr && <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl text-sm text-orange-800">{receiptErr}</div>}
 
           {!receiptOrder ? (
-            <EmptyState title="No receipt loaded" hint="Enter an order ID to preview receipt." />
+            <EmptyState title="Enter Order ID" hint="Load a closed order to preview/print receipt." />
           ) : (
-            <div className="rounded-xl border p-3 text-sm">
-              <div className="flex justify-between">
-                <span><b>Order</b></span>
-                <span>{receiptOrder.orderNumber} (#{receiptOrder.id})</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Status</span>
-                <span className="font-semibold">{receiptOrder.status}</span>
+            <div className="rounded-2xl border-2 border-[var(--color-tropical-teal-300)] bg-[var(--color-tropical-teal-50)] p-5 text-sm">
+              <div className="text-center mb-4">
+                <div className="text-xl font-black text-[var(--color-tropical-teal-800)]">Anexxa Hotel</div>
+                <div className="text-xs text-[var(--color-tropical-teal-600)]">Receipt</div>
               </div>
 
-              <div className="mt-2 border-t pt-2">
-                <div className="flex justify-between"><span>Total</span><b>LKR {receiptSummary.total.toFixed(2)}</b></div>
-                <div className="flex justify-between"><span>Paid</span><b>LKR {receiptSummary.netPaid.toFixed(2)}</b></div>
-                <div className="flex justify-between"><span>Refunds</span><b>LKR {receiptSummary.refunds.toFixed(2)}</b></div>
-                <div className="flex justify-between"><span>Balance</span><b>LKR {receiptSummary.balance.toFixed(2)}</b></div>
-              </div>
-
-              <div className="mt-2 border-t pt-2">
-                <div className="font-semibold mb-1">Payments</div>
-                <div className="space-y-1">
-                  {(receiptOrder.payments || []).map((p) => {
-                    const amt = toNum(p.amount);
-                    return (
-                      <div key={p.id} className="flex justify-between text-xs">
-                        <span>{p.method} {amt < 0 ? '(refund)' : ''}</span>
-                        <span>
-                          LKR {amt.toFixed(2)}
-                          {p.tendered != null ? ` • Tendered ${toNum(p.tendered).toFixed(2)}` : ''}
-                          {p.change != null ? ` • Change ${toNum(p.change).toFixed(2)}` : ''}
-                        </span>
-                      </div>
-                    );
-                  })}
+              <div className="space-y-2 border-b pb-3 border-[var(--color-tropical-teal-200)]">
+                <div className="flex justify-between"><span>Order</span><b>{receiptOrder.orderNumber} (#{receiptOrder.id})</b></div>
+                <div className="flex justify-between"><span>Status</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${receiptOrder.status === 'closed' ? 'bg-[var(--color-tropical-teal-200)] text-[var(--color-tropical-teal-800)]' : 'bg-orange-100 text-orange-800'}`}>
+                    {receiptOrder.status.toUpperCase()}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-3 flex gap-2">
-                <Button variant="ghost" onClick={() => window.print()}>Print</Button>
+              <div className="my-4 space-y-2 font-medium">
+                <div className="flex justify-between"><span>Bill Total</span><b>LKR {receiptSummary.total.toFixed(2)}</b></div>
+                <div className="flex justify-between"><span>Paid</span><b className="text-green-700">LKR {receiptSummary.netPaid.toFixed(2)}</b></div>
+                <div className="flex justify-between"><span>Refunds</span><b className="text-red-600">-LKR {receiptSummary.refunds.toFixed(2)}</b></div>
+                <div className="flex justify-between text-lg"><span>Balance</span><b className={receiptSummary.balance > 0 ? 'text-red-600' : 'text-green-700'}>LKR {receiptSummary.balance.toFixed(2)}</b></div>
               </div>
+
+              <div className="border-t pt-3">
+                <div className="font-semibold text-[var(--color-tropical-teal-800)] mb-2">Payments</div>
+                {(receiptOrder.payments || []).map(p => {
+                  const amt = toNum(p.amount);
+                  return (
+                    <div key={p.id} className="flex justify-between text-xs mb-1">
+                      <span>{p.method} {amt < 0 && '(Refund)'}</span>
+                      <span className={amt < 0 ? 'text-red-600' : ''}>
+                        LKR {Math.abs(amt).toFixed(2)}
+                        {p.tendered && ` • Tendered ${p.tendered}`}
+                        {p.change && ` • Change ${p.change}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button className="w-full mt-5" variant="primary" onClick={() => window.print()}>
+                Print Receipt
+              </Button>
             </div>
           )}
         </div>
       </Card>
 
-      <Card title="Refund">
-        <div className="grid gap-3">
-          <Input
-            label="Order ID"
-            value={refundOrderId}
-            onChange={(e) => setRefundOrderId(e.target.value)}
-            placeholder="e.g. 12"
-          />
-          <label className="text-sm font-medium">Refund Method</label>
-<select
-  className="w-full rounded-xl border px-3 py-2 text-sm"
-  value={refundMethod}
-  onChange={(e) => setRefundMethod(e.target.value)}
->
-  <option value="cash">Cash</option>
-  <option value="card">Card</option>
-</select>
+      {/* Refund Tool */}
+      <Card title="Issue Refund">
+        <div className="space-y-4">
+          <Input label="Order ID" value={refundOrderId} onChange={e => setRefundOrderId(e.target.value)} placeholder="e.g. 15" />
+          
+          <div>
+            <label className="block mb-1.5 text-sm font-medium text-[var(--color-tropical-teal-800)]">Refund Method</label>
+            <select
+              className="w-full rounded-xl border border-[var(--color-tropical-teal-300)] bg-white px-4 py-2.5 text-sm focus:ring-4 focus:ring-[var(--color-tropical-teal-300)]"
+              value={refundMethod}
+              onChange={e => setRefundMethod(e.target.value)}
+            >
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="room">Room Charge</option>
+            </select>
+          </div>
 
-          <Input
-            label="Refund Amount"
-            value={refundAmount}
-            onChange={(e) => setRefundAmount(e.target.value)}
-            placeholder="e.g. 250.00"
-          />
-          <Button onClick={doRefund} disabled={refundLoading}>
-            {refundLoading ? 'Refunding...' : 'Create Refund'}
+          <Input label="Refund Amount (LKR)" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} placeholder="e.g. 150.00" />
+
+          <Button className="w-full" onClick={doRefund} disabled={refundLoading}>
+            {refundLoading ? 'Processing...' : 'Issue Refund'}
           </Button>
 
-          {refundErr && <div className="text-sm text-red-600">{refundErr}</div>}
-          {refundOk && <div className="text-sm text-green-700">{refundOk}</div>}
-
-          <div className="text-xs text-zinc-600">
-            Refund creates a negative payment entry. It will show in receipt and EOD report.
-          </div>
+          {refundErr && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{refundErr}</div>}
+          {refundOk && <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">{refundOk}</div>}
         </div>
       </Card>
 
-      {/* ✅ EOD Report */}
-      <Card title="End of Day (EOD) Report">
-        <div className="grid gap-3">
-          <Input
-            label="Date (YYYY-MM-DD)"
-            value={eodDate}
-            onChange={(e) => setEodDate(e.target.value)}
-          />
-          <Input
-            label="Currency"
-            value={eodCurrency}
-            onChange={(e) => setEodCurrency(e.target.value)}
-          />
-          <Button onClick={loadEOD} disabled={eodLoading}>
-            {eodLoading ? 'Loading...' : 'Load Report'}
+      {/* EOD Report */}
+      <Card title="End of Day Report">
+        <div className="space-y-4">
+          <Input label="Date" type="date" value={eodDate} onChange={e => setEodDate(e.target.value)} />
+          <Input label="Currency" value={eodCurrency} onChange={e => setEodCurrency(e.target.value)} />
+
+          <Button className="w-full" onClick={loadEOD} disabled={eodLoading}>
+            {eodLoading ? 'Loading...' : 'Generate Report'}
           </Button>
 
-          {eodErr && <div className="text-sm text-red-600">{eodErr}</div>}
+          {eodErr && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{eodErr}</div>}
 
           {!eod ? (
-            <EmptyState title="No report loaded" hint="Pick a date and load." />
+            <EmptyState title="No report" hint="Select date and generate." />
           ) : (
-            <div className="rounded-xl border p-3 text-sm">
-              <div className="flex justify-between"><span>Date</span><b>{eod.date}</b></div>
-              <div className="flex justify-between"><span>Orders Closed</span><b>{eod.ordersClosed}</b></div>
-
-              <div className="mt-2 border-t pt-2">
-                <div className="flex justify-between"><span>Revenue (Closed Orders)</span><b>{eod.currency} {eod.revenueNet}</b></div>
-                <div className="flex justify-between"><span>Tax Total</span><b>{eod.currency} {eod.taxTotal}</b></div>
+            <div className="rounded-2xl bg-[var(--color-tropical-teal-50)] border border-[var(--color-tropical-teal-300)] p-5 text-sm space-y-3">
+              <div className="text-center font-bold text-[var(--color-tropical-teal-800)] text-lg">EOD - {eod.date}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>Orders Closed</div><b className="text-right">{eod.ordersClosed}</b>
+                <div>Net Revenue</div><b className="text-right">{eod.revenueNet}</b>
+                <div>Tax Total</div><b className="text-right">{eod.taxTotal}</b>
               </div>
 
-              {/* If you added grossPayments/refundPayments/netPayments in backend, show them */}
-              {eod.grossPayments && (
-                <div className="mt-2 border-t pt-2">
-                  <div className="flex justify-between"><span>Gross Payments</span><b>{eod.currency} {eod.grossPayments}</b></div>
-                  <div className="flex justify-between"><span>Refund Payments</span><b>{eod.currency} {eod.refundPayments}</b></div>
-                  <div className="flex justify-between"><span>Net Payments</span><b>{eod.currency} {eod.netPayments}</b></div>
-                </div>
-              )}
-
-              <div className="mt-2 border-t pt-2">
-                <div className="font-semibold mb-1">Totals By Method</div>
-                <div className="space-y-1">
-                  {(eod.totalsByMethod || []).map((m) => (
-                    <div key={m.method} className="flex justify-between text-xs">
-                      <span>{m.method}</span>
-                      <span>Gross {m.gross} • Refund {m.refunds} • Net {m.net}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="border-t pt-3">
+                <div className="font-semibold mb-2 text-[var(--color-tropical-teal-800)]">By Payment Method</div>
+                {(eod.totalsByMethod || []).map(m => (
+                  <div key={m.method} className="flex justify-between text-xs py-1">
+                    <span>{m.method}</span>
+                    <span>Gross {m.gross} • Net <b>{m.net}</b></span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
-      </Card>
-
-      {/* Shortcuts */}
-      <Card title="Shortcuts">
-        <div className="text-sm text-zinc-600">POS and Orders are in sidebar.</div>
       </Card>
     </div>
   );
