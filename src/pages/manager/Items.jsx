@@ -10,6 +10,8 @@ export default function Items() {
   const [items, setItems] = useState([]);
   const [cats, setCats] = useState([]);
   const [err, setErr] = useState('');
+  const [categories, setCategories] = useState([]);
+
 
   const [form, setForm] = useState({
     name: '',
@@ -34,15 +36,52 @@ export default function Items() {
 
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+  CategoriesService.list()
+    .then(setCategories)
+    .catch(console.error);
+}, []);
+
+
   return (
     <div className="grid gap-4">
       <Card title="Create Item">
         <div className="grid gap-3 md:grid-cols-3">
-          <Input label="Name" value={form.name} onChange={(e) => setForm(f => ({...f, name: e.target.value}))}/>
-          <Input label="SKU" value={form.sku} onChange={(e) => setForm(f => ({...f, sku: e.target.value}))}/>
-          <Input label="Category ID" value={form.categoryId} onChange={(e) => setForm(f => ({...f, categoryId: e.target.value}))}/>
-          <Input label="Price" value={form.price} onChange={(e) => setForm(f => ({...f, price: e.target.value}))}/>
-          <Input label="Tax Rate (%)" value={form.taxRate} onChange={(e) => setForm(f => ({...f, taxRate: e.target.value}))}/>
+          <Input
+  label="Item Name"
+  value={form.name}
+  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+ />
+
+<Input
+  label="Price"
+  value={form.price}
+  onChange={(e) => setForm(f => ({ ...f, price: e.target.value }))}
+ />
+
+<Input
+  label="Tax Rate (%)"
+  value={form.taxRate}
+  onChange={(e) => setForm(f => ({ ...f, taxRate: e.target.value }))}
+ />
+
+<label className="text-sm font-medium">Category</label>
+<select
+  className="w-full rounded-xl border px-3 py-2 text-sm"
+  value={form.categoryId}
+  onChange={(e) =>
+    setForm(f => ({ ...f, categoryId: Number(e.target.value) }))
+  }
+>
+  <option value="">Select category</option>
+  {categories.map(c => (
+    <option key={c.id} value={c.id}>
+      {c.name}
+    </option>
+  ))}
+</select>
+
+
           <div className="flex items-end gap-2">
             <Button onClick={async () => {
               try {
@@ -78,7 +117,7 @@ export default function Items() {
                   <th>SKU</th>
                   <th>Price</th>
                   <th>Tax%</th>
-                  <th>Cat</th>
+                  <th>Category</th>
                   <th>Active</th>
                 </tr>
               </thead>
@@ -90,7 +129,7 @@ export default function Items() {
                     <td className="text-zinc-600">{i.sku || '-'}</td>
                     <td>{i.price}</td>
                     <td>{i.taxRate}</td>
-                    <td>{i.categoryId}</td>
+                    <td>{i.name}</td>
                     <td>{String(i.isActive)}</td>
                   </tr>
                 ))}
