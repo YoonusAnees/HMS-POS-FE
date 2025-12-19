@@ -177,7 +177,7 @@ export default function Orders() {
                       {o.status === 'open' ? (
                         <Button size="sm" onClick={() => openPay(o)}>Pay</Button>
                       ) : (
-                        <span className="text-xs text-zinc-500">—</span>
+                        <span className="text-xs text-zinc-500">Paid</span>
                       )}
                     </td>
                   </tr>

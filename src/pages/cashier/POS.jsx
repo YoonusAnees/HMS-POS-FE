@@ -163,7 +163,7 @@ export default function POS() {
       const tendered = toNum(payTendered);
       if (tendered <= 0) throw new Error('Enter amount customer gives');
 
-      // ✅ backend will cap applied amount to due, and compute change
+      //  backend will cap applied amount to due, and compute change
       await PaymentsService.create({
         orderId: createdOrder.id,
         method: payMethod,
