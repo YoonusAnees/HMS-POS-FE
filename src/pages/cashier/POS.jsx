@@ -8,6 +8,8 @@ import { ItemsService } from '../../services/items.service';
 import { TablesService } from '../../services/tables.service';
 import { OrdersService } from '../../services/orders.service';
 import { PaymentsService } from '../../services/payments.service';
+import { RoomsService } from '../../services/rooms.service';
+import { api } from '../../services/api';
 
 const toNum = (v) => Number.isFinite(Number(v)) ? Number(v) : 0;
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -16,10 +18,12 @@ export default function POS() {
   const [cats, setCats] = useState([]);
   const [items, setItems] = useState([]);
   const [tables, setTables] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [err, setErr] = useState('');
 
   const [type, setType] = useState('dine_in');
   const [tableId, setTableId] = useState('');
+  const [roomId, setRoomId] = useState('');
   const [serviceChargeRate, setServiceChargeRate] = useState('10');
 
   const [cart, setCart] = useState([]);
@@ -27,28 +31,36 @@ export default function POS() {
   const [payMethod, setPayMethod] = useState('cash');
   const [payTendered, setPayTendered] = useState('');
 
+  // --- Load data ---
   const load = async () => {
     setErr('');
     try {
-      const [c, i, t] = await Promise.all([
+      const [c, i, t, r] = await Promise.all([
         CategoriesService.list(),
         ItemsService.list(),
         TablesService.list(),
+        RoomsService.listVacant(),
       ]);
+
       const activeCats = c.filter(x => x.isActive);
       const activeItems = i.filter(x => x.isActive);
       const activeTables = t.filter(x => x.isActive);
+
       setCats(activeCats);
       setItems(activeItems);
       setTables(activeTables);
+      setRooms(r);
+
       if (activeTables.length > 0 && !tableId) setTableId(String(activeTables[0].id));
+      if (r.length > 0 && !roomId) setRoomId(String(r[0].id));
     } catch (e) {
-      setErr(e?.message || 'Failed to load menu');
+      setErr(e?.message || 'Failed to load POS data');
     }
   };
 
   useEffect(() => { load(); }, []);
 
+  // --- Organize items by category ---
   const itemsByCat = useMemo(() => {
     const map = new Map();
     items.forEach(it => {
@@ -59,6 +71,7 @@ export default function POS() {
     return map;
   }, [items]);
 
+  // --- Cart totals ---
   const totals = useMemo(() => {
     let subtotal = 0, discountTotal = 0, taxTotal = 0;
     cart.forEach(line => {
@@ -84,16 +97,20 @@ export default function POS() {
     });
   };
 
+  // --- Create Order ---
   const createOrder = async () => {
     setErr('');
     try {
       if (cart.length === 0) throw new Error('Add items to cart first');
+
       const payload = {
         type,
         tableId: type === 'dine_in' ? Number(tableId || 0) : undefined,
+        roomId: type === 'room' ? Number(roomId) : undefined,
         items: cart.map(c => ({ itemId: c.itemId, qty: c.qty, discount: c.discount || '0.00' })),
         serviceChargeRate,
       };
+
       const order = await OrdersService.create(payload);
       const full = await OrdersService.getById(order.id);
       setCreatedOrder(full);
@@ -113,14 +130,17 @@ export default function POS() {
       if (!createdOrder?.id) throw new Error('Create order first');
       const tendered = toNum(payTendered);
       if (tendered <= 0) throw new Error('Enter tendered amount');
+
       await PaymentsService.create({
         orderId: createdOrder.id,
         method: payMethod,
         tendered: tendered.toFixed(2),
       });
+
       const refreshed = await OrdersService.getById(createdOrder.id);
       setCreatedOrder(refreshed);
       setPayTendered('');
+
       if (refreshed.status === 'closed') {
         setCart([]);
         setCreatedOrder(null);
@@ -194,7 +214,7 @@ export default function POS() {
                   >
                     <option value="dine_in">Dine In</option>
                     <option value="takeaway">Takeaway</option>
-                    <option value="delivery">Delivery</option>
+                    <option value="room">Room</option>
                   </select>
                 </div>
 
@@ -207,6 +227,23 @@ export default function POS() {
                       onChange={e => setTableId(e.target.value)}
                     >
                       {tables.map(t => <option key={t.id} value={t.id}>{t.code} ({t.capacity} seats)</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {type === 'room' && (
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-[var(--color-tropical-teal-800)]">Room</label>
+                    <select
+                      className="w-full rounded-xl border border-[var(--color-tropical-teal-300)] bg-white px-4 py-3"
+                      value={roomId}
+                      onChange={e => setRoomId(e.target.value)}
+                    >
+                      {rooms.map(r => (
+                        <option key={r.id} value={r.id}>
+                          Room {r.roomNumber} {r.floor ? `- Floor ${r.floor}` : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}

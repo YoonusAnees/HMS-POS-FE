@@ -22,6 +22,7 @@ import Categories from './pages/manager/Categories';
 import Items from './pages/manager/Items';
 import Tables from './pages/manager/Tables';
 import ManagerReports from './pages/manager/Reports';
+import Rooms from './pages/manager/Rooms';
 
 // Cashier pages
 import CashierDashboard from './pages/cashier/CashierDashboard';
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="items" element={<Items />} />
             <Route path="tables" element={<Tables />} />
             <Route path="reports" element={<ManagerReports />} />
+            <Route path="rooms" element={<Rooms />} />
           </Route>
         </Route>
 

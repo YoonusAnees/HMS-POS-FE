@@ -8,7 +8,8 @@ export default function ManagerLayout() {
     { to: '/manager/categories', label: 'Categories' },
     { to: '/manager/items', label: 'Items' },
     { to: '/manager/tables', label: 'Tables' },
-    { to: '/manager/reports', label: 'Reports' }
+    { to: '/manager/reports', label: 'Reports' },
+    { to: '/manager/rooms', label: 'Room' },
   ];
 
   return (

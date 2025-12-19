@@ -10,6 +10,8 @@ import { IoReceipt, IoSettings } from 'react-icons/io5';
 import { RiAlignItemBottomFill } from 'react-icons/ri';
 import { LiaTableSolid } from 'react-icons/lia';
 import { IoMdHome } from 'react-icons/io';
+import { MdRoomService } from "react-icons/md";
+
 
 export default function Sidebar({ nav = [] }) {
   const { user } = useAuth();
@@ -30,6 +32,7 @@ export default function Sidebar({ nav = [] }) {
     if (lower.includes('users')) return <FaUser {...iconProps} />;
     if (lower.includes('settings')) return <IoSettings {...iconProps} />;
     if (lower.includes('home')) return <IoMdHome {...iconProps} />;
+    if (lower.includes('room')) return <MdRoomService {...iconProps} />;
 
     return <TbLayoutDashboardFilled {...iconProps} />;
   };
