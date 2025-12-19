@@ -7,6 +7,8 @@ import { OrdersService } from '../../services/orders.service';
 import { RefundsService } from '../../services/refunds.service';
 import { ReportsService } from '../../services/reports.service';
 
+
+
 const toNum = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -28,6 +30,8 @@ export default function CashierDashboard() {
   const [receiptOrder, setReceiptOrder] = useState(null);
   const [receiptErr, setReceiptErr] = useState('');
   const [receiptLoading, setReceiptLoading] = useState(false);
+
+  
 
   // ✅ Refund
   const [refundOrderId, setRefundOrderId] = useState('');
@@ -198,7 +202,6 @@ export default function CashierDashboard() {
         </div>
       </Card>
 
-      {/* ✅ Refund */}
       <Card title="Refund">
         <div className="grid gap-3">
           <Input
@@ -207,11 +210,16 @@ export default function CashierDashboard() {
             onChange={(e) => setRefundOrderId(e.target.value)}
             placeholder="e.g. 12"
           />
-          <Input
-            label="Method (cash/card/room/online)"
-            value={refundMethod}
-            onChange={(e) => setRefundMethod(e.target.value)}
-          />
+          <label className="text-sm font-medium">Refund Method</label>
+<select
+  className="w-full rounded-xl border px-3 py-2 text-sm"
+  value={refundMethod}
+  onChange={(e) => setRefundMethod(e.target.value)}
+>
+  <option value="cash">Cash</option>
+  <option value="card">Card</option>
+</select>
+
           <Input
             label="Refund Amount"
             value={refundAmount}

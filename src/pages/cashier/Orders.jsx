@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import EmptyState from '../../components/common/EmptyState';
-import { OrdersService } from '../../services/orders.service';
-import { PaymentsService } from '../../services/payments.service';
+import React, { useEffect, useMemo, useState } from "react";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
+import EmptyState from "../../components/common/EmptyState";
+import { OrdersService } from "../../services/orders.service";
+import { PaymentsService } from "../../services/payments.service";
 
 const toNum = (v) => {
   const n = Number(v);
@@ -14,27 +14,27 @@ const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState("");
 
   // filter
-  const [statusFilter, setStatusFilter] = useState('all'); // all | open | closed
+  const [statusFilter, setStatusFilter] = useState("all"); // all | open | closed
 
   // payment modal
   const [payOpen, setPayOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [payMethod, setPayMethod] = useState('cash');
-  const [tendered, setTendered] = useState('');
-  const [payErr, setPayErr] = useState('');
+  const [payMethod, setPayMethod] = useState("cash");
+  const [tendered, setTendered] = useState("");
+  const [payErr, setPayErr] = useState("");
   const [payLoading, setPayLoading] = useState(false);
 
   const load = async () => {
-    setErr('');
+    setErr("");
     try {
       // ✅ load ALL orders (open + closed)
-      const data = await OrdersService.listAll(); 
+      const data = await OrdersService.listAll();
       setOrders(data);
     } catch (e) {
-      setErr(e?.message || 'Failed to load orders');
+      setErr(e?.message || "Failed to load orders");
     }
   };
 
@@ -43,29 +43,29 @@ export default function Orders() {
   }, []);
 
   const filteredOrders = useMemo(() => {
-    if (statusFilter === 'all') return orders;
-    return orders.filter(o => o.status === statusFilter);
+    if (statusFilter === "all") return orders;
+    return orders.filter((o) => o.status === statusFilter);
   }, [orders, statusFilter]);
 
   const openPay = async (order) => {
-    setPayErr('');
-    setTendered('');
-    setPayMethod('cash');
+    setPayErr("");
+    setTendered("");
+    setPayMethod("cash");
     setPayOpen(true);
     try {
       const full = await OrdersService.getById(order.id);
       setSelectedOrder(full);
     } catch (e) {
-      setPayErr(e?.message || 'Failed to load order');
+      setPayErr(e?.message || "Failed to load order");
     }
   };
 
   const closePay = () => {
     setPayOpen(false);
     setSelectedOrder(null);
-    setTendered('');
-    setPayMethod('cash');
-    setPayErr('');
+    setTendered("");
+    setPayMethod("cash");
+    setPayErr("");
     setPayLoading(false);
   };
 
@@ -79,13 +79,14 @@ export default function Orders() {
   const changePreview = Math.max(0, round2(toNum(tendered) - dueNow));
 
   const payNow = async () => {
-    setPayErr('');
+    setPayErr("");
     try {
-      if (!selectedOrder?.id) throw new Error('No order selected');
-      if (selectedOrder.status !== 'open') throw new Error('Only open orders can be paid');
+      if (!selectedOrder?.id) throw new Error("No order selected");
+      if (selectedOrder.status !== "open")
+        throw new Error("Only open orders can be paid");
 
       const t = toNum(tendered);
-      if (t <= 0) throw new Error('Enter tendered amount');
+      if (t <= 0) throw new Error("Enter tendered amount");
 
       setPayLoading(true);
 
@@ -97,14 +98,14 @@ export default function Orders() {
 
       await load();
 
-      if (res.order.status === 'closed') {
+      if (res.order.status === "closed") {
         closePay();
       } else {
         setSelectedOrder(res.order);
-        setTendered('');
+        setTendered("");
       }
     } catch (e) {
-      setPayErr(e?.message || 'Payment failed');
+      setPayErr(e?.message || "Payment failed");
     } finally {
       setPayLoading(false);
     }
@@ -116,26 +117,28 @@ export default function Orders() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex gap-2">
             <Button
-              variant={statusFilter === 'all' ? 'default' : 'ghost'}
-              onClick={() => setStatusFilter('all')}
+              variant={statusFilter === "all" ? "default" : "ghost"}
+              onClick={() => setStatusFilter("all")}
             >
               All
             </Button>
             <Button
-              variant={statusFilter === 'open' ? 'default' : 'ghost'}
-              onClick={() => setStatusFilter('open')}
+              variant={statusFilter === "open" ? "default" : "ghost"}
+              onClick={() => setStatusFilter("open")}
             >
               Open
             </Button>
             <Button
-              variant={statusFilter === 'closed' ? 'default' : 'ghost'}
-              onClick={() => setStatusFilter('closed')}
+              variant={statusFilter === "closed" ? "default" : "ghost"}
+              onClick={() => setStatusFilter("closed")}
             >
               Closed
             </Button>
           </div>
 
-          <Button variant="ghost" onClick={load}>Refresh</Button>
+          <Button variant="ghost" onClick={load}>
+            Refresh
+          </Button>
         </div>
 
         {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
@@ -156,16 +159,23 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map(o => (
+                {filteredOrders.map((o) => (
                   <tr key={o.id} className="border-t">
-                    <td className="py-2 font-semibold">{o.orderNumber}</td>
+                    <td className="py-2 font-semibold">{o.orderNumber}
+                        <span className="text-xs text-zinc-600 ml-2">(ID: {o.id})</span>
+                    </td>
+                    
                     <td>{o.type}</td>
                     <td>
                       <span
                         className={
-                          o.status === 'closed'
-                            ? 'rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700'
-                            : 'rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700'
+                          o.status === "closed"
+                            ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700"
+                            : o.status === "open"
+                            ? "rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700"
+                            : o.status === "refunded"
+                            ? "rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700"
+                            : "rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700"
                         }
                       >
                         {o.status}
@@ -174,10 +184,26 @@ export default function Orders() {
                     <td>{o.grandTotal}</td>
                     <td>{o.items?.length || 0}</td>
                     <td className="text-right">
-                      {o.status === 'open' ? (
-                        <Button size="sm" onClick={() => openPay(o)}>Pay</Button>
+                      {o.status === "open" ? (
+                        <Button size="sm" onClick={() => openPay(o)}>
+                          Pay
+                        </Button>
                       ) : (
-                        <span className="text-xs text-zinc-500">Paid</span>
+                        <span
+                          className={
+                            o.status === "closed"
+                              ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700"
+                              : o.status === "refunded"
+                              ? "rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700"
+                              : "rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700"
+                          }
+                        >
+                          {o.status === "closed"
+                            ? "Paid"
+                            : o.status === "refunded"
+                            ? "Refunded"
+                            : o.status}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -194,7 +220,9 @@ export default function Orders() {
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b p-4">
               <div className="font-semibold">Pay Order</div>
-              <Button variant="ghost" onClick={closePay}>Close</Button>
+              <Button variant="ghost" onClick={closePay}>
+                Close
+              </Button>
             </div>
 
             <div className="p-4 grid gap-4">
@@ -209,17 +237,35 @@ export default function Orders() {
               ) : (
                 <>
                   <div className="rounded-xl bg-zinc-50 p-3 text-sm">
-                    <div className="flex justify-between"><span>Order</span><b>{selectedOrder.orderNumber}</b></div>
-                    <div className="flex justify-between"><span>Total</span><b>LKR {billTotal.toFixed(2)}</b></div>
-                    <div className="flex justify-between"><span>Paid</span><b>LKR {paidSoFar.toFixed(2)}</b></div>
-                    <div className="flex justify-between"><span>Due</span><b>LKR {dueNow.toFixed(2)}</b></div>
+                    <div className="flex justify-between">
+                      <span>Order</span>
+                      <b>{selectedOrder.orderNumber}</b>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total</span>
+                      <b>LKR {billTotal.toFixed(2)}</b>
+                      
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Paid</span>
+                      <b>LKR {paidSoFar.toFixed(2)}</b>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Due</span>
+                      <b>LKR {dueNow.toFixed(2)}</b>
+                    </div>
                   </div>
 
-                  <Input
-                    label="Payment Method"
+                  <label className="text-sm font-medium">Pay Method</label>
+                  <select
+                    className="w-full rounded-xl border px-3 py-2 text-sm"
                     value={payMethod}
                     onChange={(e) => setPayMethod(e.target.value)}
-                  />
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                  </select>
+
                   <Input
                     label="Customer Gives (Tendered)"
                     value={tendered}
@@ -232,10 +278,16 @@ export default function Orders() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button className="w-full" onClick={payNow} disabled={payLoading}>
-                      {payLoading ? 'Processing...' : 'Pay'}
+                    <Button
+                      className="w-full"
+                      onClick={payNow}
+                      disabled={payLoading}
+                    >
+                      {payLoading ? "Processing..." : "Pay"}
                     </Button>
-                    <Button variant="ghost" onClick={closePay}>Cancel</Button>
+                    <Button variant="ghost" onClick={closePay}>
+                      Cancel
+                    </Button>
                   </div>
                 </>
               )}
