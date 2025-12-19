@@ -13,3 +13,42 @@
   --color-tropical-teal-900: #112222;
   --color-tropical-teal-950: #0c1818;
 }
+
+
+/* Dark Mode Variables */
+.dark {
+  --color-bg: #0f1f1f;
+  --color-surface: #112222;
+  --color-text: #eef7f7;
+  --color-text-muted: #98cdcd;
+  --color-border: #224444;
+  --color-primary: #54abab;
+  --color-primary-hover: #76bcbc;
+  --color-tropical-teal-50: #0c1818;
+  --color-tropical-teal-100: #112222;
+  --color-tropical-teal-200: #224444;
+  --color-tropical-teal-300: #326767;
+  --color-tropical-teal-400: #438989;
+  --color-tropical-teal-500: #54abab;
+  --color-tropical-teal-600: #76bcbc;
+  --color-tropical-teal-700: #98cdcd;
+  --color-tropical-teal-800: #bbdddd;
+  --color-tropical-teal-900: #ddeeee;
+}
+
+/* Apply to root elements */
+.dark {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Card in dark mode */
+.dark .border {
+  border-color: var(--color-border) !important;
+}
+.dark .bg-white {
+  background-color: var(--color-surface) !important;
+}
+.dark .text-zinc-600 {
+  color: var(--color-text-muted) !important;
+}
