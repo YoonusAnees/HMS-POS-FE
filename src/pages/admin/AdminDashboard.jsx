@@ -28,6 +28,18 @@ const daysAgoLocal = (n) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const CHART_COLORS = {
+  ordersOpen: '#76bcbc',        // tropical-teal-400
+  ordersClosed: '#438989',      // tropical-teal-600
+  ordersCancelled: '#224444',   // tropical-teal-800
+  paymentsGross: '#54abab',     // tropical-teal-500
+  paymentsNet: '#438989',       // tropical-teal-600
+  paymentsRefunds: '#992222',   // reddish accent for negative
+  barGross: '#98cdcd',          // tropical-teal-300
+  barNet: '#438989',            // tropical-teal-600
+  barRefunds: '#224444',        // tropical-teal-800
+};
+
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
@@ -47,7 +59,7 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(); }, []);
 
   const paymentsByMethodData = useMemo(() => {
     if (!data?.payments?.byMethod) return [];
@@ -59,143 +71,161 @@ export default function AdminDashboard() {
     }));
   }, [data]);
 
-  if (err) return <Card title="Error">{err}</Card>;
+  if (err) return <Card title="Error"><div className="text-red-600">{err}</div></Card>;
   if (!data) return <Loading />;
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-6">
       {/* Filters */}
-      <Card title="Admin Dashboard Filters">
-        <div className="grid gap-3 md:grid-cols-4">
+      <Card title="Dashboard Filters">
+        <div className="grid gap-4 md:grid-cols-4">
           <Input label="From (YYYY-MM-DD)" value={from} onChange={(e) => setFrom(e.target.value)} />
           <Input label="To (YYYY-MM-DD)" value={to} onChange={(e) => setTo(e.target.value)} />
           <Input label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)} />
           <div className="flex items-end">
-            <Button className="w-full" onClick={load}>Reload</Button>
+            <Button className="w-full" onClick={load}>Reload Data</Button>
           </div>
         </div>
       </Card>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-4">
         <Card title="Users">
-          <div className="text-2xl font-black">{data.users.total}</div>
-          <div className="text-sm text-zinc-600 mt-1">Active: {data.users.active}</div>
-          <div className="mt-2 text-xs text-zinc-600 space-y-1">
+          <div className="text-3xl font-black text-[var(--color-tropical-teal-800)]">{data.users.total}</div>
+          <div className="text-sm text-[var(--color-tropical-teal-600)] mt-2">Active: {data.users.active}</div>
+          <div className="mt-4 text-sm space-y-1">
             {data.users.byRole.map(r => (
               <div key={r.role} className="flex justify-between">
-                <span>{r.role}</span><b>{r.count}</b>
+                <span className="text-[var(--color-tropical-teal-700)]">{r.role}</span>
+                <b className="font-semibold">{r.count}</b>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card title="Orders (range)">
-          <div className="text-sm text-zinc-600">{data.range.from} → {data.range.to}</div>
-          <div className="mt-2 text-sm space-y-1">
-            <div className="flex justify-between"><span>Open</span><b>{data.counts.open}</b></div>
-            <div className="flex justify-between"><span>Closed</span><b>{data.counts.closed}</b></div>
-            <div className="flex justify-between"><span>Cancelled</span><b>{data.counts.cancelled}</b></div>
+        <Card title="Orders (Selected Range)">
+          <div className="text-sm text-[var(--color-tropical-teal-600)]">{data.range.from} → {data.range.to}</div>
+          <div className="mt-4 text-sm space-y-2">
+            <div className="flex justify-between"><span>Open</span><b className="font-semibold">{data.counts.open}</b></div>
+            <div className="flex justify-between"><span>Closed</span><b className="font-semibold">{data.counts.closed}</b></div>
+            <div className="flex justify-between"><span>Cancelled</span><b className="font-semibold">{data.counts.cancelled}</b></div>
           </div>
         </Card>
 
         <Card title="Revenue (Closed Orders)">
-          <div className="text-2xl font-black">{data.range.currency} {data.revenueClosed}</div>
-          <div className="text-sm text-zinc-600 mt-1">Tax: {data.taxClosed}</div>
+          <div className="text-3xl font-black text-[var(--color-tropical-teal-800)]">
+            {data.range.currency} {data.revenueClosed}
+          </div>
+          <div className="text-sm text-[var(--color-tropical-teal-600)] mt-2">Tax: {data.taxClosed}</div>
         </Card>
 
         <Card title="Payments (Net)">
-          <div className="text-2xl font-black">{data.range.currency} {data.payments.net}</div>
-          <div className="mt-2 text-sm space-y-1">
+          <div className="text-3xl font-black text-[var(--color-tropical-teal-800)]">
+            {data.range.currency} {data.payments.net}
+          </div>
+          <div className="mt-4 text-sm space-y-2">
             <div className="flex justify-between"><span>Gross</span><b>{data.payments.gross}</b></div>
-            <div className="flex justify-between"><span>Refunds</span><b>{data.payments.refunds}</b></div>
+            <div className="flex justify-between"><span>Refunds</span><b className="text-red-600">-{data.payments.refunds}</b></div>
             <div className="flex justify-between"><span>Refund count</span><b>{data.payments.refundsCount}</b></div>
           </div>
         </Card>
       </div>
 
       {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card title="Daily Orders Trend">
-          <div style={{ width: '100%', height: 280 }}>
+          <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
               <LineChart data={data.charts.daily}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="4 4" stroke="#ddeeee" />
+                <XAxis dataKey="day" stroke="#438989" />
+                <YAxis stroke="#438989" />
+                <Tooltip contentStyle={{ backgroundColor: '#eef7f7', border: '1px solid #bbdddd' }} />
                 <Legend />
-                <Line type="monotone" dataKey="ordersOpen" />
-                <Line type="monotone" dataKey="ordersClosed" />
-                <Line type="monotone" dataKey="ordersCancelled" />
+                <Line type="monotone" dataKey="ordersOpen" stroke={CHART_COLORS.ordersOpen} strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="ordersClosed" stroke={CHART_COLORS.ordersClosed} strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="ordersCancelled" stroke={CHART_COLORS.ordersCancelled} strokeWidth={3} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         <Card title="Daily Payments Trend">
-          <div style={{ width: '100%', height: 280 }}>
+          <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
               <LineChart data={data.charts.daily}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="4 4" stroke="#ddeeee" />
+                <XAxis dataKey="day" stroke="#438989" />
+                <YAxis stroke="#438989" />
+                <Tooltip contentStyle={{ backgroundColor: '#eef7f7', border: '1px solid #bbdddd' }} />
                 <Legend />
-                <Line type="monotone" dataKey="paymentsGross" />
-                <Line type="monotone" dataKey="paymentsRefunds" />
-                <Line type="monotone" dataKey="paymentsNet" />
+                <Line type="monotone" dataKey="paymentsGross" stroke={CHART_COLORS.paymentsGross} strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="paymentsNet" stroke={CHART_COLORS.paymentsNet} strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="paymentsRefunds" stroke={CHART_COLORS.paymentsRefunds} strokeWidth={3} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         <Card title="Payments By Method">
-          <div style={{ width: '100%', height: 280 }}>
+          <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
               <BarChart data={paymentsByMethodData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="method" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="4 4" stroke="#ddeeee" />
+                <XAxis dataKey="method" stroke="#438989" />
+                <YAxis stroke="#438989" />
+                <Tooltip contentStyle={{ backgroundColor: '#eef7f7', border: '1px solid #bbdddd' }} />
                 <Legend />
-                <Bar dataKey="gross" />
-                <Bar dataKey="refunds" />
-                <Bar dataKey="net" />
+                <Bar dataKey="gross" fill={CHART_COLORS.barGross} />
+                <Bar dataKey="net" fill={CHART_COLORS.barNet} />
+                <Bar dataKey="refunds" fill={CHART_COLORS.barRefunds} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         <Card title="Quick Notes">
-          <div className="text-sm text-zinc-600">
-            This dashboard uses: Users, Orders, Payments (including refunds as negative payments), and daily trends.
+          <div className="text-sm text-[var(--color-tropical-teal-700)] leading-relaxed">
+            This dashboard displays key metrics: Users, Orders, Payments (including refunds shown as negative), and daily trends.
           </div>
         </Card>
       </div>
 
       {/* Tables */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card title="Recent Orders">
-          <div className="overflow-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-zinc-600">
+              <thead className="bg-[var(--color-tropical-teal-100)] text-left text-[var(--color-tropical-teal-800)]">
                 <tr>
-                  <th className="py-2">Order</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Total</th>
-                  <th>Opened</th>
+                  <th className="py-3 px-4 font-semibold">Order</th>
+                  <th className="py-3 px-4 font-semibold">Type</th>
+                  <th className="py-3 px-4 font-semibold">Status</th>
+                  <th className="py-3 px-4 font-semibold">Total</th>
+                  <th className="py-3 px-4 font-semibold">Opened</th>
                 </tr>
               </thead>
-              <tbody>
-                {data.recent.orders.map(o => (
-                  <tr key={o.id} className="border-t">
-                    <td className="py-2 font-semibold">{o.orderNumber}</td>
-                    <td>{o.type}</td>
-                    <td>{o.status}</td>
-                    <td>{o.grandTotal}</td>
-                    <td className="text-xs text-zinc-600">
+              <tbody className="divide-y divide-[var(--color-tropical-teal-200)]">
+                {data.recent.orders.map((o, i) => (
+                  <tr
+                    key={o.id}
+                    className={`transition-colors ${
+                      i % 2 === 0 ? 'bg-[var(--color-tropical-teal-50)]' : 'bg-white'
+                    } hover:bg-[var(--color-tropical-teal-100)]`}
+                  >
+                    <td className="py-3 px-4 font-semibold text-[var(--color-tropical-teal-800)]">{o.orderNumber}</td>
+                    <td className="py-3 px-4">{o.type}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        o.status === 'Closed' ? 'bg-[var(--color-tropical-teal-200)] text-[var(--color-tropical-teal-800)]' :
+                        o.status === 'Open' ? 'bg-[var(--color-tropical-teal-100)] text-[var(--color-tropical-teal-700)]' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {o.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-medium">{o.grandTotal}</td>
+                    <td className="py-3 px-4 text-xs text-[var(--color-tropical-teal-600)]">
                       {new Date(o.openedAt).toLocaleString()}
                     </td>
                   </tr>
@@ -206,29 +236,34 @@ export default function AdminDashboard() {
         </Card>
 
         <Card title="Recent Payments / Refunds">
-          <div className="overflow-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-zinc-600">
+              <thead className="bg-[var(--color-tropical-teal-100)] text-left text-[var(--color-tropical-teal-800)]">
                 <tr>
-                  <th className="py-2">OrderId</th>
-                  <th>Method</th>
-                  <th>Amount</th>
-                  <th>Tendered</th>
-                  <th>Change</th>
-                  <th>Time</th>
+                  <th className="py-3 px-4 font-semibold">Order</th>
+                  <th className="py-3 px-4 font-semibold">Method</th>
+                  <th className="py-3 px-4 font-semibold">Amount</th>
+                  <th className="py-3 px-4 font-semibold">Tendered</th>
+                  <th className="py-3 px-4 font-semibold">Change</th>
+                  <th className="py-3 px-4 font-semibold">Time</th>
                 </tr>
               </thead>
-              <tbody>
-                {data.recent.payments.map(p => (
-                  <tr key={p.id} className="border-t">
-                    <td className="py-2 font-semibold">#{p.orderId}</td>
-                    <td>{p.method}</td>
-                    <td className={Number(p.amount) < 0 ? 'text-red-600 font-semibold' : ''}>
+              <tbody className="divide-y divide-[var(--color-tropical-teal-200)]">
+                {data.recent.payments.map((p, i) => (
+                  <tr
+                    key={p.id}
+                    className={`transition-colors ${
+                      i % 2 === 0 ? 'bg-[var(--color-tropical-teal-50)]' : 'bg-white'
+                    } hover:bg-[var(--color-tropical-teal-100)]`}
+                  >
+                    <td className="py-3 px-4 font-semibold text-[var(--color-tropical-teal-800)]">#{p.orderId}</td>
+                    <td className="py-3 px-4">{p.method}</td>
+                    <td className={`py-3 px-4 font-semibold ${Number(p.amount) < 0 ? 'text-red-600' : 'text-[var(--color-tropical-teal-700)]'}`}>
                       {p.amount}
                     </td>
-                    <td>{p.tendered ?? '-'}</td>
-                    <td>{p.change ?? '-'}</td>
-                    <td className="text-xs text-zinc-600">
+                    <td className="py-3 px-4">{p.tendered ?? '-'}</td>
+                    <td className="py-3 px-4">{p.change ?? '-'}</td>
+                    <td className="py-3 px-4 text-xs text-[var(--color-tropical-teal-600)]">
                       {new Date(p.paidAt).toLocaleString()}
                     </td>
                   </tr>

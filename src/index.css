@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
-/* small app defaults */
-:root { color-scheme: light; }
-html, body, #root { height: 100%; }
+:root {
+  --color-tropical-teal-50: #eef7f7;
+  --color-tropical-teal-100: #ddeeee;
+  --color-tropical-teal-200: #bbdddd;
+  --color-tropical-teal-300: #98cdcd;
+  --color-tropical-teal-400: #76bcbc;
+  --color-tropical-teal-500: #54abab;
+  --color-tropical-teal-600: #438989;
+  --color-tropical-teal-700: #326767;
+  --color-tropical-teal-800: #224444;
+  --color-tropical-teal-900: #112222;
+  --color-tropical-teal-950: #0c1818;
+}
