@@ -52,3 +52,37 @@
 .dark .text-zinc-600 {
   color: var(--color-text-muted) !important;
 }
+
+
+/* =========================
+   PRINT RECEIPT ONLY
+   ========================= */
+@media print {
+  /* Hide everything */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only receipt */
+  .print-receipt,
+  .print-receipt * {
+    visibility: visible;
+  }
+
+  /* Position receipt properly */
+  .print-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+  }
+
+  /* Remove buttons while printing */
+  button {
+    display: none !important;
+  }
+}
+/* =========================
+   END PRINT RECEIPT ONLY
+   ========================= */
