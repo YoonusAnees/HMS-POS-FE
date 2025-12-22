@@ -87,7 +87,7 @@ export default function Topbar() {
                   </div>
                 </div>
                 <button
-                  onClick={() => { logout(); nav('/login'); }}
+                  onClick={() => { logout(); nav('/'); }}
                   className="w-full text-left px-5 py-3 hover:bg-[var(--color-tropical-teal-100)] dark:hover:bg-[var(--color-tropical-teal-900)/50] flex items-center gap-3 text-red-600"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

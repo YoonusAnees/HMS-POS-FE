@@ -14,16 +14,92 @@ export default function Login() {
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  // Demo credentials for different roles
+  const demoAccounts = {
+    admin: {
+      username: 'admin',
+      password: 'admin123',
+      role: 'admin',
+      label: 'Administrator'
+    },
+    manager: {
+      username: 'Manager-1',
+      password: 'manager123',
+      role: 'manager',
+      label: 'Hotel Manager'
+    },
+    cashier: {
+      username: 'Cashier-1',
+      password: 'Cashier123',
+      role: 'cashier',
+      label: 'Cashier'
+    },
+    reception: {
+      username: 'reception',
+      password: 'reception123',
+      role: 'reception',
+      label: 'Receptionist'
+    }
+  };
+
+  const handleDemoLogin = async (role) => {
     setErr('');
     setLoading(true);
+    
     try {
-      const u = await login({ username, password });
-      if (u.role === 'admin') nav('/admin');
-      else if (u.role === 'manager') nav('/manager');
-      else if (u.role === 'cashier') nav('/cashier');
-      else if (u.role === 'reception') nav('/reception');
-      else nav('/');
+      const account = demoAccounts[role];
+      const user = await login({ 
+        username: account.username, 
+        password: account.password 
+      });
+      
+      // Navigate based on role
+      switch(user.role || role) {
+        case 'admin':
+          nav('/admin');
+          break;
+        case 'manager':
+          nav('/manager');
+          break;
+        case 'cashier':
+          nav('/cashier');
+          break;
+        case 'reception':
+          nav('/reception');
+          break;
+        default:
+          nav('/');
+      }
+    } catch (e) {
+      setErr(e.message || `Failed to login as ${demoAccounts[role].label}`);
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!username || !password) {
+      setErr('Please enter username and password');
+      return;
+    }
+
+    setErr('');
+    setLoading(true);
+    
+    try {
+      const user = await login({ username, password });
+      
+      // Navigate based on role
+      if (user.role === 'admin') {
+        nav('/admin');
+      } else if (user.role === 'manager') {
+        nav('/manager');
+      } else if (user.role === 'cashier') {
+        nav('/cashier');
+      } else if (user.role === 'reception') {
+        nav('/reception');
+      } else {
+        nav('/');
+      }
     } catch (e) {
       setErr(e.message || 'Invalid username or password');
     } finally {
@@ -70,7 +146,7 @@ export default function Login() {
             )}
 
             <Button
-              className="w-full text-lg py-3 shadow-lg"
+              className="w-full text-lg py-3 shadow-lg bg-[var(--color-tropical-teal-600)] hover:bg-[var(--color-tropical-teal-700)]"
               onClick={handleLogin}
               disabled={loading}
             >
@@ -86,11 +162,71 @@ export default function Login() {
                 'Sign In'
               )}
             </Button>
-          </div>
 
-          <div className="pt-4 border-t border-[var(--color-tropical-teal-200)]">
-           
-            
+            {/* Demo Login Section */}
+            <div className="pt-4 border-t border-[var(--color-tropical-teal-200)]">
+              <p className="text-sm text-[var(--color-tropical-teal-600)] text-center mb-3">
+                Quick Demo Login
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  className="py-2 bg-[var(--color-tropical-teal-100)] text-[var(--color-tropical-teal-800)] hover:bg-[var(--color-tropical-teal-200)]"
+                  onClick={() => handleDemoLogin('admin')}
+                  disabled={loading}
+                >
+                  <span className="text-xs">Admin</span>
+                </Button>
+                
+                <Button
+                  className="py-2 bg-[var(--color-tropical-teal-100)] text-[var(--color-tropical-teal-800)] hover:bg-[var(--color-tropical-teal-200)]"
+                  onClick={() => handleDemoLogin('manager')}
+                  disabled={loading}
+                >
+                  <span className="text-xs">Manager</span>
+                </Button>
+                
+                <Button
+                  className="py-2 bg-[var(--color-tropical-teal-100)] text-[var(--color-tropical-teal-800)] hover:bg-[var(--color-tropical-teal-200)]"
+                  onClick={() => handleDemoLogin('cashier')}
+                  disabled={loading}
+                >
+                  <span className="text-xs">Cashier</span>
+                </Button>
+                
+                {/* <Button
+                  className="py-2 bg-[var(--color-tropical-teal-100)] text-[var(--color-tropical-teal-800)] hover:bg-[var(--color-tropical-teal-200)]"
+                  onClick={() => handleDemoLogin('reception')}
+                  disabled={loading}
+                >
+                  <span className="text-xs">Reception</span>
+                </Button> */}
+              </div>
+              
+              {/* Demo Credentials Display */}
+              <div className="mt-4 p-3 bg-[var(--color-tropical-teal-50)] rounded-lg">
+                <p className="text-xs font-semibold text-[var(--color-tropical-teal-700)] mb-2">
+                  Demo Credentials:
+                </p>
+                <div className="space-y-1 text-xs text-[var(--color-tropical-teal-600)]">
+                  <div className="flex justify-between">
+                    <span>Admin:</span>
+                    <span className="font-mono">admin / admin123</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Manager:</span>
+                    <span className="font-mono">Manager / manager123</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cashier:</span>
+                    <span className="font-mono">Cashier-1 / Cashier123</span>
+                  </div>
+                  {/* <div className="flex justify-between">
+                    <span>Reception:</span>
+                    <span className="font-mono">reception / reception123</span>
+                  </div> */}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </Card>

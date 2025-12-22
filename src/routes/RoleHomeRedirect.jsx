@@ -10,5 +10,5 @@ export default function RoleHomeRedirect() {
   if (role === 'cashier') return <Navigate to="/cashier" replace />;
   if (role === 'reception') return <Navigate to="/reception" replace />;
 
-  return <Navigate to="/login" replace />;
+  return <Navigate to="/" replace />;
 }
