@@ -9,8 +9,7 @@ import { TablesService } from '../../services/tables.service';
 import { OrdersService } from '../../services/orders.service';
 import { PaymentsService } from '../../services/payments.service';
 import { RoomsService } from '../../services/rooms.service';
-import { api } from '../../services/api';
-
+import { toast } from 'react-hot-toast';
 const toNum = (v) => Number.isFinite(Number(v)) ? Number(v) : 0;
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -113,9 +112,13 @@ export default function POS() {
 
       const order = await OrdersService.create(payload);
       const full = await OrdersService.getById(order.id);
+      toast.success('Order Created');
+
       setCreatedOrder(full);
     } catch (e) {
       setErr(e?.message || 'Failed to create order');
+      toast.error(e?.message || 'Failed to create order');
+
     }
   };
 
@@ -125,31 +128,38 @@ export default function POS() {
   const changePreview = Math.max(0, round2(toNum(payTendered) - orderDue));
 
   const takePayment = async () => {
-    setErr('');
-    try {
-      if (!createdOrder?.id) throw new Error('Create order first');
-      const tendered = toNum(payTendered);
-      if (tendered <= 0) throw new Error('Enter tendered amount');
+  setErr('');
+  try {
+    if (!createdOrder?.id) throw new Error('Create order first');
 
-      await PaymentsService.create({
-        orderId: createdOrder.id,
-        method: payMethod,
-        tendered: tendered.toFixed(2),
-      });
+    const tendered = toNum(payTendered);
+    if (tendered <= 0) throw new Error('Enter tendered amount');
 
-      const refreshed = await OrdersService.getById(createdOrder.id);
-      setCreatedOrder(refreshed);
+    await PaymentsService.create({
+      orderId: createdOrder.id,
+      method: payMethod,
+      tendered: tendered.toFixed(2),
+    });
+
+    const refreshed = await OrdersService.getById(createdOrder.id);
+    setCreatedOrder(refreshed);
+    setPayTendered('');
+
+    toast.success(`Payment successful! Change: LKR ${changePreview.toFixed(2)}`);
+
+    if (refreshed.status === 'closed') {
+      setCart([]);
+      setCreatedOrder(null);
       setPayTendered('');
-
-      if (refreshed.status === 'closed') {
-        setCart([]);
-        setCreatedOrder(null);
-        setPayTendered('');
-      }
-    } catch (e) {
-      setErr(e?.message || 'Payment failed');
     }
-  };
+
+  } catch (e) {
+    setErr(e?.message || 'Payment failed');
+
+    toast.error(e?.message || 'Payment failed');
+  }
+};
+
 
   const clearPOS = () => {
     setCart([]);

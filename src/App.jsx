@@ -29,12 +29,21 @@ import CashierDashboard from './pages/cashier/CashierDashboard';
 import CashierPOS from './pages/cashier/POS';
 import CashierOrders from './pages/cashier/Orders';
 
+//Toast
+
+import { Toaster } from 'react-hot-toast';
+
+
 
 
 
 
 export default function App() {
   return (
+<>
+
+      <Toaster position="top-right" />
+
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/" element={<ProtectedRoute><RoleHomeRedirect /></ProtectedRoute>} />
@@ -76,5 +85,7 @@ export default function App() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+
+</>
   );
 }

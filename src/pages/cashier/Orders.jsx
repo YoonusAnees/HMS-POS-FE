@@ -5,6 +5,8 @@ import Input from "../../components/ui/Input";
 import EmptyState from "../../components/common/EmptyState";
 import { OrdersService } from "../../services/orders.service";
 import { PaymentsService } from "../../services/payments.service";
+import {toast} from 'react-hot-toast';
+
 
 const toNum = (v) => Number.isFinite(Number(v)) ? Number(v) : 0;
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -13,6 +15,8 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [err, setErr] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  
 
   // Payment Modal
   const [payOpen, setPayOpen] = useState(false);
@@ -79,6 +83,10 @@ export default function Orders() {
         method: payMethod,
         tendered: t.toFixed(2),
       });
+
+
+      toast.success(`Payment successful! Change: LKR ${changePreview.toFixed(2)}`);
+
 
       await load();
       if (res.order.status === "closed") {
