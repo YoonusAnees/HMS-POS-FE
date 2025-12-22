@@ -128,37 +128,37 @@ export default function POS() {
   const changePreview = Math.max(0, round2(toNum(payTendered) - orderDue));
 
   const takePayment = async () => {
-  setErr('');
-  try {
-    if (!createdOrder?.id) throw new Error('Create order first');
+    setErr('');
+    try {
+      if (!createdOrder?.id) throw new Error('Create order first');
 
-    const tendered = toNum(payTendered);
-    if (tendered <= 0) throw new Error('Enter tendered amount');
+      const tendered = toNum(payTendered);
+      if (tendered <= 0) throw new Error('Enter tendered amount');
 
-    await PaymentsService.create({
-      orderId: createdOrder.id,
-      method: payMethod,
-      tendered: tendered.toFixed(2),
-    });
+      await PaymentsService.create({
+        orderId: createdOrder.id,
+        method: payMethod,
+        tendered: tendered.toFixed(2),
+      });
 
-    const refreshed = await OrdersService.getById(createdOrder.id);
-    setCreatedOrder(refreshed);
-    setPayTendered('');
-
-    toast.success(`Payment successful! Change: LKR ${changePreview.toFixed(2)}`);
-
-    if (refreshed.status === 'closed') {
-      setCart([]);
-      setCreatedOrder(null);
+      const refreshed = await OrdersService.getById(createdOrder.id);
+      setCreatedOrder(refreshed);
       setPayTendered('');
+
+      toast.success(`Payment successful! Change: LKR ${changePreview.toFixed(2)}`);
+
+      if (refreshed.status === 'closed') {
+        setCart([]);
+        setCreatedOrder(null);
+        setPayTendered('');
+      }
+
+    } catch (e) {
+      setErr(e?.message || 'Payment failed');
+
+      toast.error(e?.message || 'Payment failed');
     }
-
-  } catch (e) {
-    setErr(e?.message || 'Payment failed');
-
-    toast.error(e?.message || 'Payment failed');
-  }
-};
+  };
 
 
   const clearPOS = () => {
@@ -216,47 +216,90 @@ export default function POS() {
             <Card title="Order Details">
               <div className="space-y-4">
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-[var(--color-tropical-teal-800)]">Order Type</label>
-                  <select
-                    className="w-full rounded-xl border border-[var(--color-tropical-teal-300)] bg-white px-4 py-3"
-                    value={type}
-                    onChange={e => setType(e.target.value)}
-                  >
-                    <option value="dine_in">Dine In</option>
-                    <option value="takeaway">Takeaway</option>
-                    <option value="room">Room</option>
-                  </select>
+                  <label className="block mb-2 text-sm font-semibold text-[var(--color-tropical-teal-800)]">
+                    Order Type
+                  </label>
+
+                  <div className="relative">
+                    <select
+                      value={type}
+                      onChange={e => setType(e.target.value)}
+                      className="
+        w-full
+        appearance-none
+        rounded-xl
+        border-2 border-[var(--color-tropical-teal-300)]
+        bg-white
+        px-5 py-3
+        text-[var(--color-tropical-teal-800)]
+        font-medium
+        shadow-sm
+        transition-all
+        focus:outline-none
+        focus:border-[var(--color-tropical-teal-600)]
+        focus:ring-2 focus:ring-[var(--color-tropical-teal-200)]
+        hover:border-[var(--color-tropical-teal-500)]
+      "
+                    >
+                      <option value="dine_in">🍽️ Dine In</option>
+                      <option value="takeaway">🥡 Takeaway</option>
+                      <option value="room">🏨 Room Service</option>
+                    </select>
+
+                    <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[var(--color-tropical-teal-600)]">
+                      ▼
+                    </div>
+                  </div>
                 </div>
 
-                {type === 'dine_in' && (
-                  <div>
-                    <label className="block mb-2 text-sm font-medium text-[var(--color-tropical-teal-800)]">Table</label>
-                    <select
-                      className="w-full rounded-xl border border-[var(--color-tropical-teal-300)] bg-white px-4 py-3"
-                      value={tableId}
-                      onChange={e => setTableId(e.target.value)}
-                    >
-                      {tables.map(t => <option key={t.id} value={t.id}>{t.code} ({t.capacity} seats)</option>)}
-                    </select>
-                  </div>
-                )}
 
-                {type === 'room' && (
-                  <div>
-                    <label className="block mb-2 text-sm font-medium text-[var(--color-tropical-teal-800)]">Room</label>
-                    <select
-                      className="w-full rounded-xl border border-[var(--color-tropical-teal-300)] bg-white px-4 py-3"
-                      value={roomId}
-                      onChange={e => setRoomId(e.target.value)}
-                    >
-                      {rooms.map(r => (
-                        <option key={r.id} value={r.id}>
-                          Room {r.roomNumber} {r.floor ? `- Floor ${r.floor}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+  {type === 'dine_in' && (
+          <Card title="Select Table">
+            <div className="grid grid-cols-3 gap-3">
+              {tables.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTableId(String(t.id))}
+                  className={`rounded-xl border p-4 ${
+                    tableId === String(t.id)
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-white'
+                  }`}
+                >
+                  🪑 {t.code}
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
+
+
+
+
+
+
+
+                     {/* ROOM GRID */}
+        {type === 'room' && (
+          <Card title="Select Room">
+            <div className="grid grid-cols-2 gap-3">
+              {rooms.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setRoomId(String(r.id))}
+                  className={`rounded-xl border p-4 ${
+                    roomId === String(r.id)
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-white'
+                  }`}
+                >
+                  🏨 Room {r.roomNumber}
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
+
 
                 <Input label="Service Charge (%)" value={serviceChargeRate} onChange={e => setServiceChargeRate(e.target.value)} />
               </div>
@@ -313,13 +356,42 @@ export default function POS() {
                   </div>
 
                   <div>
-                    <label className="block mb-2 text-sm font-medium text-[var(--color-tropical-teal-800)]">Method</label>
-                    <select className="w-full rounded-xl border border-[var(--color-tropical-teal-300)] bg-white px-4 py-3" value={payMethod} onChange={e => setPayMethod(e.target.value)}>
-                      <option value="cash">Cash</option>
-                      <option value="card">Card</option>
-                      <option value="room">Room Charge</option>
-                    </select>
+                    <label className="block mb-2 text-sm font-semibold text-[var(--color-tropical-teal-800)]">
+                      Payment Method
+                    </label>
+
+                    <div className="relative">
+                      <select
+                        value={payMethod}
+                        onChange={e => setPayMethod(e.target.value)}
+                        className="
+    w-full
+        appearance-none
+        rounded-xl
+        border-2 border-[var(--color-tropical-teal-300)]
+        bg-white
+        px-5 py-3
+        text-[var(--color-tropical-teal-800)]
+        font-medium
+        shadow-sm
+        transition-all
+        focus:outline-none
+        focus:border-[var(--color-tropical-teal-600)]
+        focus:ring-2 focus:ring-[var(--color-tropical-teal-200)]
+        hover:border-[var(--color-tropical-teal-500)]
+      "
+                      >
+                        <option value="cash" className='items-center'>💵 Cash</option>
+                        <option value="card">💳 Card</option>
+                      </select>
+
+                      {/* Dropdown Arrow */}
+                      <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[var(--color-tropical-teal-600)]">
+                        ▼
+                      </div>
+                    </div>
                   </div>
+
 
                   <Input label="Customer Tendered" value={payTendered} onChange={e => setPayTendered(e.target.value)} placeholder="e.g. 2000.00" />
 
